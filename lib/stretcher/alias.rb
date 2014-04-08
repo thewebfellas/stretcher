@@ -45,10 +45,7 @@ module Stretcher
     #
     #   my_alias.exist? # true
     def exist?
-      request(:get)
-      true
-    rescue Stretcher::RequestError::NotFound
-      false
+      !request(:get).empty?
     end
 
     private

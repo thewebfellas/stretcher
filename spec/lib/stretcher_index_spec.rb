@@ -80,7 +80,7 @@ describe Stretcher::Index do
   end
 
   it "should return the status without error" do
-    index.status['ok'].should be_true
+    index.status.should_not be_empty
   end
 
   it "should put mappings for new types correctly" do
@@ -88,13 +88,12 @@ describe Stretcher::Index do
   end
 
   it 'should be able to get mapping' do
-    index.get_mapping.should_not be_nil
-    index.get_mapping.foo.should_not be_nil
+    index.get_mapping.should eq({})
   end
 
   it "should retrieve settings properly" do
-    index.get_settings['foo']['settings']['index.number_of_shards'].should eq("1")
-    index.get_settings['foo']['settings']['index.number_of_replicas'].should eq("0")
+    index.get_settings['foo']['settings']['index']['number_of_shards'].should eq("1")
+    index.get_settings['foo']['settings']['index']['number_of_replicas'].should eq("0")
   end
 
   describe "bulk operations" do
@@ -224,9 +223,9 @@ describe Stretcher::Index do
 
   describe "#update_settings" do
     it "updates settings on the index" do
-      index.get_settings['foo']['settings']['index.number_of_replicas'].should eq("0")
-      index.update_settings("index.number_of_replicas" => "1")
-      index.get_settings['foo']['settings']['index.number_of_replicas'].should eq("1")
+      index.get_settings.foo.settings['index'].number_of_replicas.should eq("0")
+      index.update_settings(:index => { :number_of_replicas => "1" })
+      index.get_settings.foo.settings['index'].number_of_replicas.should eq("1")
     end
   end
 
@@ -240,7 +239,7 @@ describe Stretcher::Index do
       end
 
       it "successfully runs the optimize command for the index" do
-        expect(index.optimize.ok).to be_true
+        expect(index.optimize._shards.successful).to eq(1)
       end
     end
 
@@ -251,28 +250,26 @@ describe Stretcher::Index do
       end
 
       it "successfully runs the optimize command for the index with the options passed" do
-        expect(index.optimize("max_num_segments" => 1).ok).to be_true
+        expect(index.optimize("max_num_segments" => 1)._shards.successful).to eq(1)
       end
     end
 
   end
 
   context 'percolator' do
-    let(:request_url) { "http://localhost:9200/_percolator/foo/bar" }
-
     describe '#register_percolator_query' do
       it "registers the percolator query with a put request" do
-        expect(index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}}).ok).to be_true
+        expect(index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}}).created).to be_true
       end
     end
 
     describe '#delete_percolator_query' do
       before do
-        index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}}).ok
+        index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}}).created
       end
 
       it "deletes the percolator query with a delete request" do
-        expect(index.delete_percolator_query('bar').ok).to be_true
+        expect(index.delete_percolator_query('bar').found).to be_true
       end
     end
   end

@@ -168,7 +168,7 @@ module Stretcher
       res = request(:get, path_uri("/_mget"), {}, {:docs => docs})[:docs]
       if opts.has_key?(:exists)
         match = opts[:exists]
-        res.select {|d| d[:exists] == match}
+        res.select {|d| d[:found] == match}
       else
         res
       end

@@ -209,7 +209,7 @@ module Stretcher
     private
 
     def percolator_query_path(query_name)
-      server.path_uri("/_percolator/#{name}/#{query_name}")
+      server.path_uri("/#{name}/.percolator/#{query_name}")
     end
   end
 end

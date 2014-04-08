@@ -11,7 +11,7 @@ describe Stretcher::IndexType do
     mapping = {"existential" => {"properties" => {"message" => {"type" => "string"}}}}
     t.put_mapping mapping
     t.exists?.should be_true
-    t.get_mapping.should == mapping
+    t.get_mapping.should == { "foo" => { "mappings" => mapping } }
   end
 
   before do
@@ -39,7 +39,8 @@ describe Stretcher::IndexType do
 
     it "should build results when _source is not included in loaded fields" do
       res = type.search(:query => {:match_all => {}}, :fields => ['message'])
-      res.results.first.message.should == @doc[:message]
+      res.results.first.message.size.should eq(1)
+      res.results.first.message.first.should eq(@doc[:message])
     end
 
     it "should build results when no document fields are selected" do
@@ -96,8 +97,8 @@ describe Stretcher::IndexType do
 
     it 'allows options to be passed through' do
       response = type.mget([988, 989], :fields => 'message')
-      response.docs.first.fields.message.should == 'message one!'
-      response.docs.last.fields.message.should == 'message two!'
+      response.docs.first.fields.message.should == ['message one!']
+      response.docs.last.fields.message.should == ['message two!']
     end
   end
 
@@ -169,7 +170,7 @@ describe Stretcher::IndexType do
 
       it 'should allow options to be passed through' do
         index.refresh
-        type.explain(987, {:query => {:match_all => {}}}, {:fields => 'message'}).get.fields.message.should == 'hello!'
+        type.explain(987, {:query => {:match_all => {}}}, {:fields => 'message'}).get.fields.message.should == ['hello!']
       end
     end
     
@@ -185,7 +186,7 @@ describe Stretcher::IndexType do
 
     it "should update individual docs correctly using doc and fields" do
       response =  type.update(987, {:doc => {:message => 'Updated!'}}, :fields => 'message')
-      response.get.fields.message.should == 'Updated!'      
+      response.get.fields.message.should == ['Updated!']
     end
 
     it "should delete by query correctly" do
@@ -214,7 +215,10 @@ describe Stretcher::IndexType do
     end
 
     it 'returns matching percolated queries based on the document' do
-      type.percolate({:baz => 'qux'}).matches.should == ['bar']
+      matches = type.percolate({:baz => 'qux'}).matches
+      matches.size.should eq(1)
+      matches.first["_index"].should eq("foo")
+      matches.first["_id"].should eq("bar")
     end
   end
 end
